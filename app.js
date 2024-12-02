@@ -12,8 +12,8 @@ const showHelp = (COMMANDS) => {
     console.log(help.join('\n'))
 }
 
-const run = async (solutionsDir, inputDir, day) => {
-    const { partOne, partTwo } = await import(`${path.join(solutionsDir, day)}.js`)
+const run = async (solutionDir, inputDir, day) => {
+    const { partOne, partTwo } = await import(`${path.join(solutionDir, day)}.js`)
     const data = readFileSync(`${path.join(inputDir, day)}.txt`).toString()
     const lines = data.split('\n')
 
@@ -25,7 +25,6 @@ const run = async (solutionsDir, inputDir, day) => {
 }
 
 const isValidFile = (filepath) => {
-    let pathExists = true
     let stat
     try {
         stat = statSync(filepath)
@@ -42,8 +41,25 @@ const isValidFile = (filepath) => {
     return false
 }
 
-const start = (solutionsDir, inputDir, templateFile, day, force) => {
-    const solutionFile = `${path.join(solutionsDir, day)}.js`
+const isValidDirectory = (dirpath) => {
+    let stat
+    try {
+        stat = statSync(dirpath)
+    } catch (e) {
+        return false
+    }
+
+    if (stat) {
+        if (stat.isDirectory) {
+            return true
+        }
+    }
+
+    return false
+}
+
+const start = (solutionDir, inputDir, templateFile, day, force) => {
+    const solutionFile = `${path.join(solutionDir, day)}.js`
     const inputFile = `${path.join(inputDir, day)}.txt`
 
     if (!isValidFile(templateFile)) {
@@ -69,14 +85,27 @@ const main = async () => {
     const parts = import.meta.url.split('/')
     parts.pop()
     const cwd = parts.join('/').replace(/^file:/, '')
-    const solutionsDir = path.join(cwd, 'solutions')
+    const solutionDir = path.join(cwd, 'solutions')
     const inputDir = path.join(cwd, 'input')
     const templateFile = path.join(cwd, 'template.js')
 
-    process.argv.shift()
-    process.argv.shift()
+    if (!isValidDirectory(solutionDir)) {
+        console.error('Missing solutions directory! Did you remove it? There should be a directory called \'solutions\' in the current directory')
+        process.exit(1)
+    }
 
-    // TODO: check for dirs
+    if (!isValidDirectory(inputDir)) {
+        console.error('Missing inputs directory! Did you remove it? There should be a directory called \'input\' in the current directory')
+        process.exit(1)
+    }
+
+    if (!isValidFile(templateFile)) {
+        console.error('Missing template file! Did you remove it? There should be a template file called \'template.js\' in the current directory')
+        process.exit(1)
+    }
+
+    process.argv.shift()
+    process.argv.shift()
 
     const COMMANDS = ['start', 'run']
 
@@ -105,11 +134,11 @@ const main = async () => {
     switch (cmd) {
         case 'run':
             for (let day of process.argv) {
-                await run(solutionsDir, inputDir, day)
+                await run(solutionDir, inputDir, day)
             }
             break
         case 'start':
-            start(solutionsDir, inputDir, templateFile, process.argv[0], force)
+            start(solutionDir, inputDir, templateFile, process.argv[0], force)
             break
         default:
             console.error('Invalid command state, not sure what happened!')
