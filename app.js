@@ -1,5 +1,6 @@
 import { readFileSync, statSync, copyFileSync, openSync } from 'node:fs'
 import path from 'node:path'
+import { hrtime } from 'node:process'
 
 // build the help menu message
 const showHelp = (commands) => {
@@ -73,6 +74,39 @@ const isValidDirectory = (dirpath) => {
     return false
 }
 
+// pretty print a time delta
+const prettifyTime = (start, end) => {
+    // TODO: this is broke, doesn't subtract smaller units (shows 3m 181s when it should be 3m 1s)
+    const nanos = end - start
+    let millis = nanos / 1000000n;
+    let seconds = millis / 1000n;
+    let minutes = seconds / 60n;
+    let hours = minutes / 60n;
+    
+    let tokens = []
+
+    if (hours > 0n) {
+        tokens.push(`${hours}h`)
+        minutes -= hours * 60n
+        seconds -= hours * 60n * 60n
+    }
+
+    if (minutes > 0n) {
+        tokens.push(`${minutes}m`)
+        seconds -= minutes * 60n
+    }
+
+    if (seconds > 0n) {
+        tokens.push(`${seconds}s`)
+    }
+
+    if (tokens.length === 0) {
+        tokens.push(`${millis}ms`)
+    }
+
+    return tokens.join(' ')
+}
+
 // start working on a new day
 const start = (solutionDir, inputDir, templateFile, day, force) => {
     const solutionFile = `${path.join(solutionDir, day)}.js`
@@ -137,11 +171,15 @@ const runWithData = async (solutionDir, inputFile, day) => {
     const lines = data.split('\n')
 
     // run the built solution
+    let start = hrtime.bigint()
     let result = partOne(lines)
+    let end = hrtime.bigint()
     console.log(`=== Day ${day} ===`)
-    console.log(`1: ${result}`)
+    console.log(`1: ${result} (${prettifyTime(start, end)})`)
+    start = hrtime.bigint()
     result = partTwo(lines)
-    console.log(`2: ${result}`)
+    end = hrtime.bigint()
+    console.log(`2: ${result} (${prettifyTime(start, end)})`)
 }
 
 const main = async () => {
