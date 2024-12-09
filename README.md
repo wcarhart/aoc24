@@ -15,7 +15,7 @@ node app.js -h
 ```
 
 ## Testing
-Usually when writing the solution, it's easier to test with the provided dummy example or custom scenarios. To do this, put these in a local file (e.g. `test.txt`, which in particular is ignored in this repository), and then use the `test` command.
+Usually when writing the solution, it's easier to test with the provided dummy example or custom scenarios. To do this, put these in a local file (e.g. `test.txt`), and then use the `test` command.
 ```bash
 node app.js test DAY test.txt
 ```
