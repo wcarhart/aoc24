@@ -12,9 +12,29 @@ const showHelp = (COMMANDS) => {
     console.log(help.join('\n'))
 }
 
-const run = async (solutionDir, inputDir, day) => {
-    const { partOne, partTwo } = await import(`${path.join(solutionDir, day)}.js`)
-    const data = readFileSync(`${path.join(inputDir, day)}.txt`).toString()
+const showMissingInputFileError = (day) => {
+    let error = [
+        `Missing input file for day ${day}!`,
+        `  Create an official input file with \`node app.js start ${day}\``,
+        `  Test a custom input file with \`node app.js test ${day} FILE\``
+    ]
+    console.error(error.join('\n'))
+}
+
+const runWithData = async (solutionDir, inputFile, day) => {
+    const solutionFile = `${path.join(solutionDir, day)}.js`
+    if (!isValidFile(solutionFile)) {
+        console.error(`Missing solution file for day ${day}! Create one with \`node app.js start ${day}\``)
+        process.exit(1)
+    }
+
+    if (!isValidFile(inputFile)) {
+        showMissingInputFileError(day)
+        process.exit(1)
+    }
+
+    const { partOne, partTwo } = await import(solutionFile)
+    const data = readFileSync(inputFile).toString()
     const lines = data.split('\n')
 
     let result = partOne(lines)
@@ -22,6 +42,19 @@ const run = async (solutionDir, inputDir, day) => {
     console.log(`1: ${result}`)
     result = partTwo(lines)
     console.log(`2: ${result}`)
+}
+
+const run = async (solutionDir, inputDir, day) => {
+    const inputFile = `${path.join(inputDir, day)}.txt`
+    return await runWithData(solutionDir, inputFile, day)
+}
+
+const test = async (solutionDir, inputFile, day) => {
+    if (inputFile === undefined) {
+        showMissingInputFileError(day)
+        process.exit(1)
+    }
+    return await runWithData(solutionDir, inputFile, day)
 }
 
 const isValidFile = (filepath) => {
@@ -58,6 +91,7 @@ const isValidDirectory = (dirpath) => {
     return false
 }
 
+// start working on a new day
 const start = (solutionDir, inputDir, templateFile, day, force) => {
     const solutionFile = `${path.join(solutionDir, day)}.js`
     const inputFile = `${path.join(inputDir, day)}.txt`
@@ -107,7 +141,7 @@ const main = async () => {
     process.argv.shift()
     process.argv.shift()
 
-    const COMMANDS = ['start', 'run']
+    const COMMANDS = ['start', 'run', 'test']
 
     if (process.argv.includes('-h') || process.argv.includes('--help')) {
         showHelp(COMMANDS)
@@ -139,6 +173,11 @@ const main = async () => {
             break
         case 'start':
             start(solutionDir, inputDir, templateFile, process.argv[0], force)
+            break
+        case 'test':
+            const day = process.argv.shift()
+            const inputFile = process.argv.shift()
+            await test(solutionDir, inputFile, day)
             break
         default:
             console.error('Invalid command state, not sure what happened!')
